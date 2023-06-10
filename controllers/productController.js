@@ -5,7 +5,7 @@ const fs = require('fs');
 // create product
 const createProductController = async (req, res) => {
     try {
-        const { name, author, description, category, price } = req.fields;
+        const { name, author, description, category, price, quantity } = req.fields;
         const { cover } = req.files;
         // const existing product
         const existingProduct = await ProductModel.findOne({ name }).select({ cover: 0 });
@@ -23,6 +23,7 @@ const createProductController = async (req, res) => {
             description,
             category,
             price,
+            quantity,
             categorySlug: slugify(category).toLowerCase(),
             productSlug: slugify(name).toLowerCase()
         })
