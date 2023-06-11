@@ -175,6 +175,41 @@ const searchController = async (req, res) => {
     }
 }
 
+// update product
+const updateProductController = async (req, res) => {
+    try {
+        const { cover } = req.files;
+
+        const productData = await ProductModel.findOne({ productSlug: req.params.slug }).select({ cover: 0 });
+
+        // get the product
+        const productToBeUpdate = {
+            ...req.fields,
+            categorySlug: req.fields.category ? slugify(req.fields.category).toLowerCase() : productData.categorySlug,
+            productSlug: req.fields.name ? slugify(req.fields.name).toLowerCase() : productData.productSlug
+        }
+
+        if (cover) {
+            productToBeUpdate.cover = { data: '', contentType: '' };
+            productToBeUpdate.cover.data = fs.readFileSync(cover.path);
+            productToBeUpdate.cover.contentType = cover.type
+        }
+
+        const newProduct = await ProductModel.findByIdAndUpdate(productData._id, { ...productToBeUpdate }).select({ cover: 0 });
+        res.status(200).send({
+            success: true,
+            message: 'Product updated successfully'
+        })
+
+    } catch (error) {
+        res.status(500).send({
+            success: false,
+            message: 'Error while updating product'
+        })
+        console.log(error);
+    }
+}
+
 // delete product
 const deleteProductController = async (req, res) => {
     try {
@@ -201,5 +236,6 @@ module.exports = {
     similarProductController,
     filterController,
     searchController,
-    deleteProductController
+    deleteProductController,
+    updateProductController
 };
