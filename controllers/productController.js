@@ -52,7 +52,7 @@ const createProductController = async (req, res) => {
 // get all products
 const allProductController = async (req, res) => {
     try {
-        const products = await ProductModel.find({}).select({ cover: 0 }).sort({ createdAt: -1 }).limit(15);
+        const products = await ProductModel.find({}).select({ cover: 0 }).sort({ createdAt: -1 });
         res.status(200).send({
             success: true,
             message: 'all product list',
@@ -175,6 +175,23 @@ const searchController = async (req, res) => {
     }
 }
 
+// delete product
+const deleteProductController = async (req, res) => {
+    try {
+        const product = await ProductModel.deleteOne({ productSlug: req.params.slug }).select({ cover: 0 });
+        res.status(200).send({
+            success: true,
+            message: 'Product deleted successfully'
+        })
+    } catch (error) {
+        res.status(500).send({
+            success: false,
+            message: 'Error while deleting product'
+        })
+        console.log(error);
+    }
+}
+
 module.exports = {
     createProductController,
     allProductController,
@@ -183,5 +200,6 @@ module.exports = {
     categoryProductController,
     similarProductController,
     filterController,
-    searchController
+    searchController,
+    deleteProductController
 };

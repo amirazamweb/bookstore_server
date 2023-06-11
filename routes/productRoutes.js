@@ -8,7 +8,8 @@ const { createProductController,
     categoryProductController,
     similarProductController,
     filterController,
-    searchController } = require('../controllers/productController');
+    searchController,
+    deleteProductController } = require('../controllers/productController');
 
 // create ||post
 router.post('/create', formidable(), createProductController);
@@ -33,5 +34,8 @@ router.get('/filter/:slug', filterController)
 
 // search product
 router.post('/search', searchController)
+
+// delete product
+router.delete('/delete/:slug', deleteProductController)
 
 module.exports = router;
