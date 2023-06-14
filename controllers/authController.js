@@ -1,4 +1,4 @@
-const userModel = require('../models/userModel');
+const UserModel = require('../models/userModel');
 const { hashedPassword, comparePassword, createToken } = require('../helpers/authHelper');
 const fs = require('fs');
 const { type } = require('os');
@@ -10,7 +10,7 @@ const signupController = async (req, res) => {
         const { profileImg } = req.files;
 
         // existing user
-        const existingUser = await userModel.findOne({ email }).select({ profileImg: 0, password: 0 });
+        const existingUser = await UserModel.findOne({ email }).select({ profileImg: 0, password: 0 });
         if (existingUser) {
             return res.status(200).send({
                 success: false,
@@ -20,7 +20,7 @@ const signupController = async (req, res) => {
         }
         // hashed password
         const hashedPW = hashedPassword(password);
-        const user = new userModel({ fname, lname, email, password: hashedPW })
+        const user = new UserModel({ fname, lname, email, password: hashedPW })
         if (profileImg) {
             user.profileImg.data = fs.readFileSync(profileImg.path);
             user.profileImg.contentType = profileImg.type;
@@ -45,7 +45,7 @@ const loginController = async (req, res) => {
         const { email, password } = req.body;
 
         // checking valid user
-        const user = await userModel.findOne({ email }).select({ profileImg: 0 });
+        const user = await UserModel.findOne({ email }).select({ profileImg: 0 });
 
         if (!user) {
             return res.status(200).send({
@@ -82,7 +82,7 @@ const loginController = async (req, res) => {
 // profile image
 const profileImageController = async (req, res) => {
     try {
-        const user = await userModel.findById(req.params.uID).select({ profileImg: 1 });
+        const user = await UserModel.findById(req.params.uID).select({ profileImg: 1 });
         if (user?.profileImg.data) {
             res.set('Content-type', user?.profileImg.contentType);
             res.status(200).send(user.profileImg.data)
@@ -97,6 +97,43 @@ const profileImageController = async (req, res) => {
     }
 }
 
+// all users
+const allUsersController = async (req, res) => {
+    try {
+        const users = await UserModel.find({ _id: { $nin: [req.params.id] } }).select({ password: 0, profileImg: 0 }).sort({ createdAt: -1 });
+        res.status(200).send({
+            success: true,
+            message: 'All users',
+            users
+        })
+    } catch (error) {
+        res.status(500).send({
+            success: false,
+            message: 'Error while getting all users',
+            error
+        })
+        console.log(error);
+    }
+}
+
+// update user
+const updateUserController = async (req, res) => {
+    const { role } = req.body;
+    try {
+        await UserModel.findByIdAndUpdate(req.params.id, { role }, { new: true }).select({ covser: 0 });
+        res.status(200).send({
+            success: true,
+            message: 'User updated successfully'
+        })
+    } catch (error) {
+        res.status(500).send({
+            success: false,
+            message: 'Error while updating users',
+            error
+        })
+        console.log(error);
+    }
+}
 module.exports = {
-    signupController, loginController, profileImageController
+    signupController, loginController, profileImageController, allUsersController, updateUserController
 }

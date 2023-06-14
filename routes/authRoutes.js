@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const formidable = require('express-formidable');
-const { signupController, loginController, profileImageController } = require('../controllers/authController');
+const { signupController, loginController, profileImageController, allUsersController, updateUserController } = require('../controllers/authController');
 const { isLogin, isAdmin } = require('../middlewares/authMiddleware');
 
 // signup ||post
@@ -22,5 +22,11 @@ router.get('/user', isLogin, (req, res) => {
 router.get('/admin', isLogin, isAdmin, (req, res) => {
     res.send({ ok: true })
 })
+
+// all users
+router.get('/all-users/:id', allUsersController)
+
+// update user
+router.put('/update/:id', updateUserController)
 
 module.exports = router;
