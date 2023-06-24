@@ -10,7 +10,12 @@ const { createProductController,
     filterController,
     searchController,
     deleteProductController,
-    updateProductController } = require('../controllers/productController');
+    updateProductController,
+    braintreeTokenController,
+    braintreePaymentController,
+    allOrdersController,
+    singleOrderController,
+    updateOrderStatusController } = require('../controllers/productController');
 
 // create ||post
 router.post('/create', formidable(), createProductController);
@@ -40,6 +45,22 @@ router.post('/search', searchController)
 router.put('/update/:slug', formidable(), updateProductController)
 
 // delete product
-router.delete('/delete/:slug', deleteProductController)
+router.delete('/delete/:slug', deleteProductController);
+
+// payment route
+// token
+router.get('/braintree/token', braintreeTokenController);
+
+// payments
+router.post('/braintree/payment', braintreePaymentController)
+
+// all orders
+router.get('/all-orders', allOrdersController)
+
+// single order
+router.get('/single-order/:id', singleOrderController)
+
+// update order status
+router.put('/update-order/:id', updateOrderStatusController)
 
 module.exports = router;

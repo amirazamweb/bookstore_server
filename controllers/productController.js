@@ -1,6 +1,21 @@
 const ProductModel = require('../models/productModel');
+const OrdrModel = require('../models/orderModel');
 const slugify = require('slugify');
 const fs = require('fs');
+const dotenv = require('dotenv');
+const braintree = require('braintree');
+const orderModel = require('../models/orderModel');
+
+dotenv.config();
+
+// gateway
+
+var gateway = new braintree.BraintreeGateway({
+    environment: braintree.Environment.Sandbox,
+    merchantId: process.env.BRAINTREE_MERCHANT_ID,
+    publicKey: process.env.BRAINTREE_PUBLIC_KEY,
+    privateKey: process.env.BRAINTREE_PRIVATE_KEY
+});
 
 // create product
 const createProductController = async (req, res) => {
@@ -227,6 +242,105 @@ const deleteProductController = async (req, res) => {
     }
 }
 
+// payment gateway api token
+const braintreeTokenController = async (req, res) => {
+    try {
+        gateway.clientToken.generate({}, function (err, response) {
+            if (err) {
+                res.status(500).send(err)
+            }
+            else {
+                res.send(response)
+            }
+        })
+    } catch (error) {
+        es.status(500).send({
+            success: false,
+            message: 'Error while getting gateway token'
+        })
+        console.log(error);
+    }
+}
+
+//payment
+const braintreePaymentController = (req, res) => {
+    try {
+        const { cart, nonce } = req.body;
+        console.log(req.body);
+        let total = 0;
+        cart.map((i) => { total += i.price });
+        let newTransaction = gateway.transaction.sale({
+            amount: total,
+            paymentMethodNonce: nonce,
+            options: {
+                submitForSettlement: true
+            }
+        },
+            function (error, result) {
+                if (result) {
+                    const order = new OrdrModel({
+                        products: cart,
+                        payment: result,
+                        buyer: req.body._id
+                    }).save();
+                    res.json({ ok: true })
+                }
+                else {
+                    res.status(500).send(error)
+                }
+            }
+        )
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+// all orders
+const allOrdersController = async (req, res) => {
+    try {
+        const orders = await OrdrModel.find({})
+            .populate('buyer', '-profileImg -password')
+            .populate('products', '-cover').sort({ createdAt: -1 })
+        res.json(orders);
+    } catch (error) {
+        res.status(500).send({
+            success: false,
+            message: 'Error while getting all orders'
+        })
+        console.log(error);
+    }
+}
+
+// single order
+const singleOrderController = async (req, res) => {
+    try {
+        const orders = await OrdrModel.find({ buyer: req.params.id })
+            .populate('buyer', '-profileImg -password')
+            .populate('products', '-cover').sort({ createdAt: -1 })
+        res.json(orders);
+    } catch (error) {
+        res.status(500).send({
+            success: false,
+            message: 'Error while getting all orders'
+        })
+        console.log(error);
+    }
+}
+
+// update order Status
+const updateOrderStatusController = async (req, res) => {
+    try {
+        await orderModel.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.send({ ok: true })
+    } catch (error) {
+        res.status(500).send({
+            success: false,
+            message: 'Error while updating order status'
+        })
+        console.log(error);
+    }
+}
+
 module.exports = {
     createProductController,
     allProductController,
@@ -237,5 +351,10 @@ module.exports = {
     filterController,
     searchController,
     deleteProductController,
-    updateProductController
+    updateProductController,
+    braintreeTokenController,
+    braintreePaymentController,
+    allOrdersController,
+    singleOrderController,
+    updateOrderStatusController
 };
